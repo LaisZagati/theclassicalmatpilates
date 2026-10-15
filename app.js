@@ -46,7 +46,7 @@
       finished: "Practice complete", finishedBody: "{n} exercises practised in this session.", again: "Start again", of: "of",
       footNote: "Exercise order and titles follow Return to Life Through Contrology (1945). Instructions, cues and modifications are contemporary teaching guidance. The animations are illustrations, not video of a real person. Check with a qualified instructor or health professional if you have an injury or condition.",
       smaller: "Smaller text", larger: "Larger text", textSize: "Text size", lowerRest: "Lower and rest",
-      brandWord: "Classical Pilates Mat", voiceLang: "Voice language", voiceWho: "Voice", woman: "Woman", man: "Man", both: "EN + ES",
+      brandWord: "Classical Pilates Mat", practiceShort: "Practice", installIos: "Install the app: tap the Share button, then Add to Home Screen.", installAndroid: "Install Pilates Mat on your phone for full-screen, offline practice.", installBtn: "Install", close: "Close", voiceLang: "Voice language", voiceWho: "Voice", woman: "Woman", man: "Man", both: "EN + ES",
       voiceHint: "Voices come from your device. With EN + ES, the movement waits for each cue to be read in both languages."
     },
     es: {
@@ -74,7 +74,7 @@
       finished: "Práctica terminada", finishedBody: "{n} ejercicios practicados en esta sesión.", again: "Empezar de nuevo", of: "de",
       footNote: "El orden y los títulos siguen Return to Life Through Contrology (1945). Las instrucciones, indicaciones y modificaciones son orientación docente contemporánea. Las animaciones son ilustraciones, no vídeo de una persona real. Consulta con una instructora cualificada o un profesional sanitario si tienes una lesión o condición.",
       smaller: "Texto más pequeño", larger: "Texto más grande", textSize: "Tamaño de texto", lowerRest: "Baja y descansa",
-      brandWord: "Pilates Clásico en Mat", voiceLang: "Idioma de la voz", voiceWho: "Voz", woman: "Mujer", man: "Hombre", both: "EN + ES",
+      brandWord: "Pilates Clásico en Mat", practiceShort: "Práctica", installIos: "Instala la app: toca el botón Compartir y luego Añadir a pantalla de inicio.", installAndroid: "Instala Pilates Mat en tu móvil para practicar a pantalla completa y sin conexión.", installBtn: "Instalar", close: "Cerrar", voiceLang: "Idioma de la voz", voiceWho: "Voz", woman: "Mujer", man: "Hombre", both: "EN + ES",
       voiceHint: "Las voces vienen de tu dispositivo. Con EN + ES, el movimiento espera a que cada indicación se lea en los dos idiomas."
     }
   };
@@ -554,6 +554,7 @@
 
     // notes
     var ta = app.querySelector("#notes"), timer = 0;
+    ta.addEventListener("focus", function () { setTimeout(function () { ta.scrollIntoView({ block: "center", behavior: reduced ? "auto" : "smooth" }); }, 300); });
     ta.value = state.notes[n] || "";
     ta.addEventListener("input", function () {
       clearTimeout(timer);
@@ -627,20 +628,52 @@
     var h = location.hash.replace(/^#\/?/, "").split("/");
     var page = h[0] || "";
     document.querySelectorAll("[data-nav]").forEach(function (a) {
-      var on = (a.dataset.nav === "practice" && page === "practice") || (a.dataset.nav === "lessons" && page !== "practice");
+      var on = a.dataset.nav === "practice" ? page === "practice" : a.dataset.nav === "favorites" ? page === "favorites" : (page !== "practice" && page !== "favorites");
       if (on) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
     });
     var key = page + "/" + (h[1] || "");
     if (page === "lesson") viewLesson(+h[1], +(h[2] || 0));
     else if (page === "practice") viewPractice(+(h[1] || 0) || practiceItems()[0], h[2] === "auto");
-    else viewList();
-    if (key !== lastRoute) { window.scrollTo(0, 0); lastRoute = key; }
+    else if (page === "favorites") { listFilter = "favorites"; viewList(); }
+    else { if (lastRoute.indexOf("favorites") === 0) listFilter = "all"; viewList(); }
+    if (key !== lastRoute) {
+      window.scrollTo(0, 0); lastRoute = key;
+      if (!reduced) { app.classList.remove("enter"); void app.offsetWidth; app.classList.add("enter"); }
+    }
   }
   window.addEventListener("hashchange", route);
   document.getElementById("lang").addEventListener("change", function (e) { state.lang = e.target.value; save(); applyChrome(); route(); });
   document.getElementById("smaller").addEventListener("click", function () { state.scale = Math.max(0.85, +(state.scale - 0.1).toFixed(2)); save(); applyChrome(); });
   document.getElementById("larger").addEventListener("click", function () { state.scale = Math.min(1.5, +(state.scale + 0.1).toFixed(2)); save(); applyChrome(); });
   if (canSpeak) try { window.speechSynthesis.getVoices(); } catch (e) { /* ignore */ }
+
+  /* ---------------- installable app ---------------- */
+  if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
+    window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () { /* offline cache unavailable here */ }); });
+  }
+  var installEl = document.getElementById("install"), deferred = null;
+  var standalone = (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || window.navigator.standalone === true;
+  function showInstall(kind) {
+    if (!installEl || standalone || state.installDismissed) return;
+    document.getElementById("install-text").textContent = kind === "ios" ? t("installIos") : t("installAndroid");
+    var go = document.getElementById("install-go");
+    go.hidden = kind === "ios"; go.textContent = t("installBtn");
+    document.getElementById("install-x").setAttribute("aria-label", t("close"));
+    installEl.hidden = false;
+  }
+  if (installEl) {
+    document.getElementById("install-x").addEventListener("click", function () { installEl.hidden = true; state.installDismissed = true; save(); });
+    document.getElementById("install-go").addEventListener("click", function () {
+      if (!deferred) return;
+      deferred.prompt();
+      deferred.userChoice.then(function () { deferred = null; installEl.hidden = true; });
+    });
+    window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); deferred = e; showInstall("android"); });
+    window.addEventListener("appinstalled", function () { installEl.hidden = true; state.installDismissed = true; save(); });
+    var ua = navigator.userAgent || "";
+    var isIos = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+    if (isIos && /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS/.test(ua) && window.self === window.top) setTimeout(function () { showInstall("ios"); }, 2500);
+  }
 
   applyChrome();
   try { route(); }

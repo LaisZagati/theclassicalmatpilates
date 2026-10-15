@@ -3,6 +3,22 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <!-- Installable app (Android, desktop Chrome/Edge) -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+  <!-- Icon on the iPhone Home Screen (180×180 PNG) -->
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <!-- Opens full screen from the Home Screen, without the browser bar -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <!-- Name shown under the icon -->
+  <meta name="apple-mobile-web-app-title" content="Pilates Mat">
+  <meta name="application-name" content="Pilates Mat">
+  <!-- Status bar style and colour (matches the light and dark themes) -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#faf6f7" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#160c1b" media="(prefers-color-scheme: dark)">
+  <meta name="format-detection" content="telephone=no">
   <title>Classical Pilates Mat: learn the 34 exercises</title>
   <meta name="description" content="Classical Pilates Mat: learn the 34 Pilates mat exercises step by step, with an animated demonstration, breathing guide and read-aloud in English and Spanish.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -22,8 +38,8 @@
       <div class="tools">
         <label class="sr" for="lang" data-t="language">Language</label>
         <select id="lang" class="pill-select">
-          <option value="en">English</option>
-          <option value="es">Español</option>
+          <option value="en">EN</option>
+          <option value="es">ES</option>
           <option value="both">EN + ES</option>
         </select>
         <div class="size" role="group" aria-label="Text size">
@@ -37,6 +53,21 @@
   <main id="app" tabindex="-1">
     <div class="boot" role="status">Classical Pilates Mat</div>
   </main>
+
+  <!-- Bottom navigation on phones -->
+  <nav class="tabbar" aria-label="Main">
+    <a href="#/" data-nav="lessons"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H10a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H5.5A1.5 1.5 0 0 1 4 16.5zM20 5.5A1.5 1.5 0 0 0 18.5 4H14a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h4.5a1.5 1.5 0 0 0 1.5-1.5z"/></svg><span data-t="lessons">Lessons</span></a>
+    <a href="#/practice" data-nav="practice"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M10 8.5v7l6-3.5z" class="fill"/></svg><span data-t="practiceShort">Practice</span></a>
+    <a href="#/favorites" data-nav="favorites"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg><span data-t="favorites">Favorites</span></a>
+  </nav>
+
+  <!-- Add to Home Screen tip (shown once, dismissible) -->
+  <div class="install" id="install" hidden role="region" aria-label="Install">
+    <img src="icons/icon-180.png" alt="" width="40" height="40">
+    <p id="install-text"></p>
+    <button type="button" class="btn btn-ink" id="install-go" hidden></button>
+    <button type="button" class="install-x" id="install-x" aria-label="Close">×</button>
+  </div>
 
   <footer class="foot">
     <p data-t="footNote">Exercise order and titles follow Return to Life Through Contrology (1945). Instructions, cues and modifications are contemporary teaching guidance. The animations are illustrations, not video of a real person. Check with a qualified instructor or health professional if you have an injury or condition.</p>

@@ -12,7 +12,7 @@
   /* ---------------- saved state (this device) ---------------- */
   var KEY = "return-learn-v1";
   var state = (function () {
-    var d = { lang: "en", scale: 1, favorites: [], learned: {}, notes: {}, breath: 4, speed: 1, voice: false, voiceLang: null, voiceGender: "woman" };
+    var d = { lang: "en", scale: 1, favorites: [], learned: {}, notes: {}, breath: 4, speed: 1, voice: true, voiceLang: null, voiceGender: "woman" };
     try { var s = JSON.parse(localStorage.getItem(KEY) || "{}"); for (var k in s) d[k] = s[k]; } catch (e) { /* storage unavailable */ }
     if (!d.voiceLang) d.voiceLang = d.lang;
     return d;
@@ -28,7 +28,7 @@
       none: "No exercises match. Try another name or choose All.", noFav: "No favorites yet. Open a lesson and add it to favorites.",
       allLessons: "All lessons", whatItTrains: "What it trains", favAdd: "Add to favorites", favRemove: "In favorites", markLearned: "Mark as learned", isLearned: "Learned",
       demo: "Demonstration", inhale: "Inhale", exhale: "Exhale", getReady: "Get ready", breatheNaturally: "Breathe naturally", done: "Done",
-      play: "Play", pause: "Pause", restart: "Restart", speed: "Speed", breath: "Breath", voiceOn: "Voice on", voiceOff: "Voice off",
+      play: "Play", pause: "Pause", restart: "Restart", speed: "Speed", breath: "Breath", voiceOn: "Voice on", voiceOff: "Voice off", voiceTest: "Voice on.",
       repOf: "Rep {r} of {n}", loop: "Looping demonstration", startPos: "Starting position",
       clipNote: "An illustrated figure performs the movement in time with the breath. Slow the speed or lengthen the breath while you learn.",
       stepByStep: "Step by step", stepOf: "Step {i} of {n}", setUp: "Set up", stepWord: "Step {i}",
@@ -56,7 +56,7 @@
       none: "Ningún ejercicio coincide. Prueba otro nombre o elige Todos.", noFav: "Aún no hay favoritos. Abre una lección y añádela a favoritos.",
       allLessons: "Todas las lecciones", whatItTrains: "Qué trabaja", favAdd: "Añadir a favoritos", favRemove: "En favoritos", markLearned: "Marcar como aprendido", isLearned: "Aprendido",
       demo: "Demostración", inhale: "Inhala", exhale: "Exhala", getReady: "Prepárate", breatheNaturally: "Respira con naturalidad", done: "Hecho",
-      play: "Reproducir", pause: "Pausar", restart: "Reiniciar", speed: "Velocidad", breath: "Respiración", voiceOn: "Voz activada", voiceOff: "Voz desactivada",
+      play: "Reproducir", pause: "Pausar", restart: "Reiniciar", speed: "Velocidad", breath: "Respiración", voiceOn: "Voz activada", voiceOff: "Voz desactivada", voiceTest: "Voz activada.",
       repOf: "Repetición {r} de {n}", loop: "Demostración en bucle", startPos: "Posición inicial",
       clipNote: "Una figura ilustrada realiza el movimiento al ritmo de la respiración. Baja la velocidad o alarga la respiración mientras aprendes.",
       stepByStep: "Paso a paso", stepOf: "Paso {i} de {n}", setUp: "Colócate", stepWord: "Paso {i}",
@@ -178,7 +178,7 @@
     requestAnimationFrame(loop);
   }
   requestAnimationFrame(loop);
-  function clearPlayers() { players.forEach(function (p) { if (p.stop) p.stop(); }); players = []; stopSpeech(); }
+  function clearPlayers() { players.forEach(function (p) { if (p.stop) p.stop(); }); players = []; stopSpeech(); if (typeof mediaAudio === "function") mediaAudio(false); }
   var reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   /* ---------------- voice: English, Spanish or both; woman or man ---------------- */
@@ -209,15 +209,60 @@
     return u;
   }
   /* obj is {en, es}; the voice language setting decides which is read, or both in turn */
+  /* Mobile browsers only allow speech after a tap. The first tap anywhere (and every Play,
+     Voice or Read aloud tap) speaks a silent word inside the tap, which unlocks the voice. */
+  var unlocked = false, keep = [], speakTimer = 0;
+  /* iPhone silent mode: ask Safari to treat this page's sound as media playback (like music or
+     video), and keep a silent audio track running while the voice is on. Media playback is not
+     muted by the silent switch, so the voice can be heard in silent mode. */
+  var SILENT = "data:audio/wav;base64,UklGRsQPAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YaAPAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA";
+  var keepAlive = null;
+  function mediaAudio(on) {
+    try { if (navigator.audioSession) navigator.audioSession.type = on ? "playback" : "auto"; } catch (e) { /* older browsers */ }
+    try {
+      if (on) {
+        if (!keepAlive) { keepAlive = new Audio(SILENT); keepAlive.loop = true; keepAlive.setAttribute("playsinline", ""); keepAlive.preload = "auto"; }
+        var pr = keepAlive.play(); if (pr && pr.catch) pr.catch(function () { /* needs a tap first */ });
+      } else if (keepAlive) { keepAlive.pause(); }
+    } catch (e) { /* ignore */ }
+  }
+  function unlockSpeech() {
+    if (!canSpeak) return;
+    if (state.voice) mediaAudio(true);
+    try {
+      var s = window.speechSynthesis;
+      if (s.paused) s.resume();
+      if (unlocked) return;
+      var u = new SpeechSynthesisUtterance(" ");
+      u.volume = 0; u.rate = 1;
+      keep.push(u);
+      s.speak(u);
+      unlocked = true;
+      loadVoices();
+    } catch (e) { /* ignore */ }
+  }
+  if (canSpeak) {
+    var firstTap = function () { unlockSpeech(); if (unlocked) { document.removeEventListener("touchend", firstTap, true); document.removeEventListener("click", firstTap, true); } };
+    document.addEventListener("touchend", firstTap, true);
+    document.addEventListener("click", firstTap, true);
+  }
   function speak(obj) {
     if (!canSpeak) return;
-    try {
-      var s = window.speechSynthesis; s.cancel();
-      var order = state.voiceLang === "both" ? ["en", "es"] : [state.voiceLang === "es" ? "es" : "en"];
-      order.forEach(function (code) { if (obj[code]) s.speak(utter(obj[code], code)); });
-    } catch (e) { /* no speech */ }
+    var s = window.speechSynthesis;
+    clearTimeout(speakTimer);
+    var order = state.voiceLang === "both" ? ["en", "es"] : [state.voiceLang === "es" ? "es" : "en"];
+    function go() {
+      try {
+        if (s.paused) s.resume();
+        keep = []; // hold references so mobile Chrome does not drop the utterances
+        order.forEach(function (code) { if (obj[code]) { var u = utter(obj[code], code); keep.push(u); s.speak(u); } });
+      } catch (e) { /* no speech */ }
+    }
+    // cancelling and speaking in the same moment makes iPhone and Android drop the new words
+    if (s.speaking || s.pending) { try { s.cancel(); } catch (e) { /* ignore */ } speakTimer = setTimeout(go, 120); }
+    else go();
   }
-  function stopSpeech() { if (canSpeak) try { window.speechSynthesis.cancel(); } catch (e) { /* ignore */ } }
+  function stopSpeech() { clearTimeout(speakTimer); if (canSpeak) try { window.speechSynthesis.cancel(); } catch (e) { /* ignore */ } }
   function voiceControls() {
     if (!canSpeak) return "";
     return '<span class="row"><span class="seg-label">' + esc(t("voiceLang")) + '</span><span class="seg js-vlang" role="radiogroup" aria-label="' + esc(t("voiceLang")) + '">' +
@@ -287,7 +332,7 @@
     var phases, idx, acc, playing = false, finished = false, spokenIdx = -1;
     function rebuild() { phases = buildPhases(ex, opts.reps || repsFor(ex), state.breath); idx = 0; acc = 0; finished = false; spokenIdx = -1; }
     rebuild();
-    function setPlaying(v) { playing = v; if (!v) stopSpeech(); draw(0); }
+    function setPlaying(v) { playing = v; if (!v) { stopSpeech(); mediaAudio(false); } draw(0); }
     function syncControls() {
       playBtn.textContent = playing ? t("pause") : finished ? t("again") : idx > 0 || acc > 0 ? t("play") : t("play");
       root.querySelectorAll(".js-speed button").forEach(function (b) { b.setAttribute("aria-checked", String(+b.dataset.v === state.speed)); });
@@ -327,7 +372,7 @@
             acc -= phases[idx].dur; idx++;
             if (idx >= phases.length) {
               if (opts.loop) { idx = 1; } // loop the movement, skip the set-up
-              else { idx = phases.length - 1; acc = phases[idx].dur; finished = true; playing = false; if (state.voice) speak({ en: "Done.", es: "Hecho." }); if (opts.onDone) setTimeout(opts.onDone, 0); break; }
+              else { idx = phases.length - 1; acc = phases[idx].dur; finished = true; playing = false; setTimeout(function () { if (!playing) mediaAudio(false); }, 4000); if (state.voice) speak({ en: "Done.", es: "Hecho." }); if (opts.onDone) setTimeout(opts.onDone, 0); break; }
             }
           }
           if (playing && state.voice && spokenIdx !== idx) {
@@ -343,6 +388,7 @@
     };
     players.push(player);
     playBtn.addEventListener("click", function () {
+      if (state.voice) unlockSpeech();
       if (finished) { rebuild(); setPlaying(true); return; }
       setPlaying(!playing);
     });
@@ -350,7 +396,7 @@
     root.querySelector(".js-speed").addEventListener("click", function (e) { var b = e.target.closest("button"); if (!b) return; state.speed = +b.dataset.v; save(); syncControls(); });
     root.querySelector(".js-breath").addEventListener("click", function (e) { var b = e.target.closest("button"); if (!b) return; state.breath = +b.dataset.v; save(); var was = playing; rebuild(); setPlaying(was); });
     var vb = root.querySelector(".js-voice");
-    if (vb) vb.addEventListener("click", function () { state.voice = !state.voice; save(); if (!state.voice) stopSpeech(); else spokenIdx = -1; syncControls(); });
+    if (vb) vb.addEventListener("click", function () { state.voice = !state.voice; save(); if (!state.voice) { stopSpeech(); mediaAudio(false); } else { unlockSpeech(); spokenIdx = -1; speak({ en: tl("en", "voiceTest"), es: tl("es", "voiceTest") }); } syncControls(); });
     bindVoiceControls(root, function () { spokenIdx = -1; });
     draw(0);
     if (opts.autoplay && !reduced) setPlaying(true);
@@ -537,6 +583,7 @@
     app.querySelector(".js-snext").addEventListener("click", function () { if (cur < total - 1) showStep(cur + 1); });
     var rd = app.querySelector(".js-sread");
     if (rd) rd.addEventListener("click", function () {
+      unlockSpeech();
       var st = stepText(cur);
       speak({
         en: (cur === 0 ? tl("en", "setUp") : tl("en", "stepWord", { i: cur })) + ". " + st.en,
